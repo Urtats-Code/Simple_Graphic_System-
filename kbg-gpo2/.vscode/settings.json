@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "transformations.h": "c",
+        "cargar-triangulo.h": "c",
+        "maths.h": "c",
+        "common_structures.h": "c",
+        "helper_variables.h": "c",
+        "object_mutations.h": "c"
+    }
+}
