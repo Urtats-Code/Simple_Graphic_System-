@@ -1,6 +1,5 @@
 
 // Change options
-
 #define TRANSLATE 't'
 #define ROTATE 'r'
 #define EXPAND 's'
@@ -29,6 +28,7 @@
 #define TY 7
 #define TZ 11
 #define MOVING_PIXELS 15
+
 // Rotaiton movement 
 
 // ( 15 deg = 0.261799 rad  )
@@ -38,3 +38,4 @@
 // Scaling 
 
 #define SCALING_VALUE 1.3
+

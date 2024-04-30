@@ -1,5 +1,7 @@
 #include "cargar-triangulo.h"
 
+
+
 typedef struct mlist
 {
     double m[16];

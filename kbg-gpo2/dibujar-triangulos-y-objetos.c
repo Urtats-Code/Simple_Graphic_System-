@@ -370,7 +370,7 @@ void scale_object( int direction ) {
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    scale( &( herlper_matrix ), direction );
+    scale( ( double * ) &( herlper_matrix ), direction );
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
@@ -456,63 +456,76 @@ static void teklatua(unsigned char key, int x, int y)
             }
         }
         break;
+
     case 'd':
-        if (denak == 1)
-            denak = 0;
-        else
-            denak = 1;
+
+        if (denak == 1) denak = 0;
+        else denak = 1;
         break;
+
     case 'o':
-        if (objektuak == 1)
-            objektuak = 0;
-        else
-            objektuak = 1;  
+
+        if (objektuak == 1) objektuak = 0;
+        else objektuak = 1;  
         break;
+
     case 'l':
-        if (lineak == 1)
-            lineak = 0;
-        else
-            lineak = 1;
+
+        if (lineak == 1) lineak = 0;
+        else lineak = 1;
         break;
+
+
     case TRANSLATE:
+
         printf(" You are now in TRANSLATING MODE \n");
         aldaketa = TRANSLATE;
         break;
+
     case ROTATE:
+
         printf(" You are now in ROTATING MODE \n");
         aldaketa = ROTATE;
         break;
 
     case EXPAND: 
+
         printf(" You are now in EXPANDING ITEM \n");
         scale_object( 1 );
         break;
 
     case RETRACT: 
+
         printf(" You are now in RETRACTING ITEM \n");
         scale_object( 0 );
         break;
+
     case 'g':
-        if (ald_lokala == 1)
-            ald_lokala = 0;
-        else
-            ald_lokala = 1;
+
+        if (ald_lokala == 1) ald_lokala = 0;
+        else ald_lokala = 1;
         break;
+
     case 'x':
         x_aldaketa(1);
         break;
+
     case 'y':
         y_aldaketa(1);
         break;
+
     case 'z':
         z_aldaketa(1);
         break;
+
     case 'X':
         x_aldaketa(0);
         break;
+
     case 'Y':
         y_aldaketa(0);
         break;
+
     case 'Z':
         z_aldaketa(0);
         break;
@@ -520,6 +533,7 @@ static void teklatua(unsigned char key, int x, int y)
     case 'u':
         undo();
         break;
+    
     case 'f':
         /*Ask for file*/
         printf("idatzi fitxategi izena\n");

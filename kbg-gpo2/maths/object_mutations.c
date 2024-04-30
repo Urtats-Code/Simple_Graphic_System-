@@ -23,7 +23,9 @@ void M_Left( double *m ) {
     double *multiplying_matrix;
     mlist *new_matrix;
 
-    printf(" You are updating the matrix LEFT \n"); 
+    printM( m , " Matriz de transformacion " ); 
+    printM( ( double * ) &(sel_ptr -> mptr -> m) , "Matriz del objeto"); 
+
 
     new_matrix = (mlist *)malloc (sizeof(mlist));
 
@@ -34,7 +36,7 @@ void M_Left( double *m ) {
     new_matrix->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_matrix;
 
-
+    printM( ( double * ) &(sel_ptr -> mptr -> m), " Matriz final: " );
 
 }
 
@@ -48,13 +50,15 @@ void M_Right( double *m ){
     multiplying_matrix = (double * ) &(sel_ptr -> mptr -> m)  ;
 
 
-    printM( m , "Matriz de rotacion " ); 
+    
+    printM( m , " Matriz de transformacion " ); 
     printM( ( double * ) &(sel_ptr -> mptr -> m) , "Matriz del objeto"); 
 
     MxM( ( double *) &(new_matrix-> m) , m, multiplying_matrix);
 
     new_matrix->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_matrix;
+
 
     printM( ( double * ) &(sel_ptr -> mptr -> m), " Matriz final: " );
 
