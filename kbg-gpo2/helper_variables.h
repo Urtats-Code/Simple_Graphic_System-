@@ -1,5 +1,5 @@
 
-// Loading Items optiosn 
+// Loading Items options
 
 #define ADDING_OBJECT "object" 
 #define ADDING_CAMERA "camera"
@@ -23,6 +23,13 @@
 #define Y_AXIS 'y'
 #define Z_AXIS 'z'
 
+
+/**
+ ************************************************ 
+ *               TRANSFORMATIONS
+ ************************************************ 
+ */
+
 // Translation and rotation direciton variables 
 
 #define POSITIVE_DIRECTION 1 
@@ -45,3 +52,12 @@
 
 #define SCALING_VALUE 1.3
 
+
+/**
+ ************************************************ 
+ *                  CAMERA
+ ************************************************ 
+ */
+
+
+#define SELECT_CAMERA 'c'

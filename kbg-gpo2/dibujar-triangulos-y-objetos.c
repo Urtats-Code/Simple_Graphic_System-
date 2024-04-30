@@ -95,15 +95,15 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
 
         u = c1u * t + (1 - t) * c2u;
         v = c1v * t + (1 - t) * c2v;
+
+        // Recibe la posicion de la textura
         colorv = color_textura(u, v);
         r = colorv[0];
         g = colorv[1];
         b = colorv[2];
         glColor3ub(r, g, b);
         glVertex3f(xkoord, linea, zkoord);
-        // TODO
-        // zkoord, u eta v berriak kalkulatu eskuineko puntuarentzat
-        // calcular zkoord, u y v del siguiente pixel
+
     }
     glEnd();
 }
@@ -234,7 +234,7 @@ void dibujar_triangulo(triobj *optr, int i)
     }
 }
 
-static void marraztu(void)
+static void marraztu( void )
 {
     float u, v;
     int i, j;
@@ -261,20 +261,34 @@ static void marraztu(void)
     glLoadIdentity();
     glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
 
-
-    triangulosptr = sel_ptr->triptr;
+    triangulosptr = sel_ptr -> triptr;
 
     if (objektuak == 1)
     {
         if (denak == 1)
         {
+
+
+
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
-                for (i = 0; i < auxptr->num_triangles; i++)
+                for (i = 0; i < auxptr -> num_triangles; i++)
                 {
                     dibujar_triangulo(auxptr, i);
                 }
             }
+
+            for (auxptr = fcamprt; auxptr != 0; auxptr = auxptr -> hptr)
+            {
+
+                for (i = 0; i < auxptr->num_triangles; i++)
+                {
+                    dibujar_triangulo(auxptr, i);
+                }
+
+            }
+
+
         }
         else
         {
@@ -282,16 +296,24 @@ static void marraztu(void)
             {
                 dibujar_triangulo(sel_ptr, i);
             }
+
+            for (i = 0; i < cam_ptr -> num_triangles; i++)
+            {
+                dibujar_triangulo(sel_ptr, i);
+            }
         }
     }
     else
     {
+
         dibujar_triangulo(sel_ptr, indexx);
+        dibujar_triangulo(cam_ptr, indexx);
+
     }
     glFlush();
 }
 
-void read_from_file( char *fitx, triobj **list_ptr )
+void read_from_file( char *fitx, triobj **list_ptr, int is_camera )
 {
     int i, retval;
     triobj *optr;
@@ -321,10 +343,16 @@ void read_from_file( char *fitx, triobj **list_ptr )
 
         // printf("objektu zerrendara doa informazioa...\n");
 
-        // Asignt head pointer to the list pointer 
-        optr->hptr = *list_ptr;
-        // Set optr as the first item on the list
-        *list_ptr = optr;
+        if ( is_camera ){
+            optr->hptr = fcamprt;
+            fcamprt = optr;
+            cam_ptr = *list_ptr;
+        }
+        else{
+            optr->hptr = foptr;
+            foptr = optr;
+            sel_ptr = *list_ptr;
+        }
 
     }
 
@@ -518,8 +546,13 @@ static void teklatua(unsigned char key, int x, int y)
         undo();
         break;
     
+    case SELECT_CAMERA:
+        
+        break;
+
     case 'f':
-        /*Ask for file*/
+
+        /* Ask for file and type */
         
         printf("Introduce file name: \n");
         scanf("%s", &(fitxiz[0]));
@@ -529,8 +562,8 @@ static void teklatua(unsigned char key, int x, int y)
 
         // Ads the item to the object items
 
-        if( strcmp(adding_file_type, ADDING_OBJECT)  ) read_from_file( fitxiz, &foptr );
-        else read_from_file( fitxiz, &fcamprt );
+        if( strcmp( adding_file_type, ADDING_OBJECT )) read_from_file( fitxiz, &foptr, 0 );
+        else read_from_file( fitxiz, &fcamprt, 1 );
 
         indexx = 0;
 
@@ -611,7 +644,7 @@ int main(int argc, char **argv)
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
 
     // Custom options
-    denak = 0;
+    denak = 1;
     lineak = 1;
     ald_lokala = 1;
     objektuak = 1;
@@ -632,21 +665,26 @@ int main(int argc, char **argv)
     if (argc > 1) 
     { 
         // Cameras 
-        read_from_file( "camara.txt", &fcamprt);
+        read_from_file( "camara.txt", &fcamprt, 1 );
 
         // Object
-        read_from_file( argv[1],      &foptr );
+        read_from_file( argv[1],      &foptr,   0 );
+        read_from_file( "z.txt",      &foptr, 0  );
+        
+        foptr -> mptr -> m[ TX ] = 250; 
+
     }
     else 
     {
+
         // Cameras 
-        read_from_file( "camara.txt", &fcamprt);
+        read_from_file( "camara.txt", &fcamprt, 1 );
 
         // Objects 
-        read_from_file( "z.txt",      &foptr );
-        read_from_file( "k.txt",      &foptr );
+        read_from_file( "z.txt",      &foptr, 0  );
+        read_from_file( "k.txt",      &foptr, 0  );
 
-        foptr -> mptr -> m[ TX ] = 250; 
+
 
     }
 
