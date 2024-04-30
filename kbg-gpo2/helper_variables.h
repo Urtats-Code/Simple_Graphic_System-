@@ -1,5 +1,11 @@
 
+// Loading Items optiosn 
+
+#define ADDING_OBJECT "object" 
+#define ADDING_CAMERA "camera"
+
 // Change options
+
 #define TRANSLATE 't'
 #define ROTATE 'r'
 #define EXPAND 's'

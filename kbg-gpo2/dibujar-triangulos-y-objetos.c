@@ -6,7 +6,7 @@
 
 //  Author: Urtats Berrocal
 
-// Version: Transforamciones v0
+// Version: Caamara v0
 
 // Execute project using ./execute.sh
 
@@ -47,29 +47,18 @@
 extern int load_ppm(char *file, unsigned char **bufferptr, int *dimxptr, int *dimyptr);
 unsigned char *bufferra;
 int dimx, dimy;
-
 int indexx;
-
-
-int denak;
-int lineak;
-int objektuak;
-char aldaketa;
-int ald_lokala;
 
 char fitxiz[100];
 
-void objektuari_aldaketa_sartu_ezk(double m[16])
-{
-}
 
-void objektuari_aldaketa_sartu_esk(double m[16])
-{
-}
+/**
+ ************************************************************************ 
+ *                           LOAD AND RENDER ITEMS
+ ************************************************************************  
+ */
 
-// TODO
-// funtzio honek u eta v koordenatuei dagokien pointerra itzuli behar du.
-// debe devolver el pointer correspondiente a las coordenadas u y v
+
 unsigned char *color_textura(float u, float v)
 {
     int desplazamendua;
@@ -87,9 +76,6 @@ unsigned char *color_textura(float u, float v)
     return (lag + 3 * desplazamendua);
 }
 
-// TODO
-// lerroa marrazten du, baina testuraren kodea egokitu behar da
-// dibuja una linea pero hay que codificar la textura
 void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, float c2x, float c2z, float c2u, float c2v)
 {
     float xkoord, zkoord;
@@ -121,21 +107,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
     }
     glEnd();
 }
-
-void print_matrizea(char *str)
-{
-    int i;
-
-    printf("%s\n", str);
-    for (i = 0; i < 4; i++)
-        printf("%lf, %lf, %lf, %lf\n", sel_ptr->mptr->m[i * 4], sel_ptr->mptr->m[i * 4 + 1], sel_ptr->mptr->m[i * 4 + 2],
-               sel_ptr->mptr->m[i * 4 + 3]);
-}
-
-// TODO
-// aurrerago egitekoa
-// para más adelante
-
 
 void punto_de_corte(punto *p_arriba_ptr, punto *p_abajo_ptr, int altura, punto *p_centro_prt)
 {
@@ -320,7 +291,7 @@ static void marraztu(void)
     glFlush();
 }
 
-void read_from_file(char *fitx)
+void read_from_file( char *fitx, triobj **list_ptr )
 {
     int i, retval;
     triobj *optr;
@@ -344,13 +315,16 @@ void read_from_file(char *fitx)
 
         transform_into_identity_matrix( &( optr -> mptr -> m[0] ) ); 
 
+
+        // Null head pointer
         optr -> mptr -> hptr = 0;
 
         // printf("objektu zerrendara doa informazioa...\n");
 
-        optr -> hptr = foptr;
-        foptr = optr;
-        sel_ptr = optr;
+        // Asignt head pointer to the list pointer 
+        optr->hptr = *list_ptr;
+        // Set optr as the first item on the list
+        *list_ptr = optr;
 
     }
 
@@ -427,6 +401,7 @@ void z_aldaketa(int dir)
 
 void undo()
 {
+
     int not_initial_position = sel_ptr -> mptr -> hptr != 0;
 
     if( not_initial_position ){
@@ -435,6 +410,8 @@ void undo()
     }
 
 }
+
+
 
 // This function will be called whenever the user pushes one key
 static void teklatua(unsigned char key, int x, int y)
@@ -543,10 +520,20 @@ static void teklatua(unsigned char key, int x, int y)
     
     case 'f':
         /*Ask for file*/
-        printf("idatzi fitxategi izena\n");
+        
+        printf("Introduce file name: \n");
         scanf("%s", &(fitxiz[0]));
-        read_from_file(fitxiz);
+
+        printf("Introduce object type:  \n  1 - 'object'  \n 2 - 'camera' ");
+        scanf("%s", &(adding_file_type[0]) );
+
+        // Ads the item to the object items
+
+        if( strcmp(adding_file_type, ADDING_OBJECT)  ) read_from_file( fitxiz, &foptr );
+        else read_from_file( fitxiz, &fcamprt );
+
         indexx = 0;
+
         break;
         /* case 'S':  // save to file
              printf("idatzi fitxategi izena\n");
@@ -570,9 +557,13 @@ static void teklatua(unsigned char key, int x, int y)
                           fclose(obj_file);
                           }
                  break; */
-    case 9:             /* <TAB> */
-        if (foptr != 0) // objekturik gabe ez du ezer egin behar
-                        // si no hay objeto no hace nada
+    case 9:             
+    
+        /* <TAB> */
+
+        // If theres no item does nothing
+
+        if (foptr != 0)                         
         {
             sel_ptr = sel_ptr->hptr;
             /*The selection is circular, thus if we move out of the list we go back to the first element*/
@@ -619,18 +610,45 @@ int main(int argc, char **argv)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
 
+    // Custom options
     denak = 0;
     lineak = 1;
-
+    ald_lokala = 1;
     objektuak = 1;
+
+    // Object list
     foptr = 0;
     sel_ptr = 0;
-    aldaketa = 'r';
-    ald_lokala = 1;
+
+    // Camera list
+    fcamprt = 0;
+    cam_ptr = 0;
+
+    // Starting transformation 
+    aldaketa = ROTATE;
 
 
-    if (argc > 1) read_from_file(argv[1]);
-    else read_from_file("z.txt");
+
+    if (argc > 1) 
+    { 
+        // Cameras 
+        read_from_file( "camara.txt", &fcamprt);
+
+        // Object
+        read_from_file( argv[1],      &foptr );
+    }
+    else 
+    {
+        // Cameras 
+        read_from_file( "camara.txt", &fcamprt);
+
+        // Objects 
+        read_from_file( "z.txt",      &foptr );
+        read_from_file( "k.txt",      &foptr );
+
+        foptr -> mptr -> m[ TX ] = 250; 
+
+    }
 
     glutMainLoop();
 

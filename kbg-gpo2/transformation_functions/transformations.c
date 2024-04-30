@@ -146,6 +146,14 @@ void rotateZ( double *rz , int direction ){
 }
 
 
+/**
+ *  Scaling matrix, 
+    ( scale, 0, 0, 0, )
+    ( 0, scale, 0, 0, )
+    ( 0, 0, scale, 0, )
+    ( 0, 0, 0,     1  )
+ */
+
 void scale( double *m, int direction ) {
 
     double scale = SCALING_VALUE; 
