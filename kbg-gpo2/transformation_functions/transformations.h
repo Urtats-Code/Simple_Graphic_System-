@@ -12,3 +12,7 @@ void rotate(  double *m, char axis, int direction );
 void rotateX( double *m , int direction );
 void rotateY( double *m , int direction );
 void rotateZ( double *m , int direction );
+
+// Scaling 
+
+void scale( double *m, int direction );

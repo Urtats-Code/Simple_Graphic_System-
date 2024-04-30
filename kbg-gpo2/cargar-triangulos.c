@@ -31,7 +31,6 @@ punto p1,p2,p3;
 
 int cargar_triangulos(char *fitxiz, int *hkopptr, hiruki **hptrptr)
 {
-	
  FILE *obj_file;
  char line[MAXLINE];
  int i, num_triangles;

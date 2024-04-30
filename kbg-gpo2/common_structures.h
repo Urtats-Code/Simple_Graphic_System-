@@ -14,6 +14,8 @@ typedef struct triobj
     struct triobj *hptr;
 } triobj;
 
+// Used objects
+
 hiruki *triangulosptr;
 triobj *foptr;
 triobj *sel_ptr;

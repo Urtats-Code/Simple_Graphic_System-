@@ -34,6 +34,8 @@ void M_Left( double *m ) {
     new_matrix->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_matrix;
 
+
+
 }
 
 void M_Right( double *m ){
@@ -43,13 +45,17 @@ void M_Right( double *m ){
 
     new_matrix = (mlist *)malloc (sizeof(mlist));
 
-    multiplying_matrix = &(sel_ptr->mptr->m[0]);
+    multiplying_matrix = (double * ) &(sel_ptr -> mptr -> m)  ;
 
-    MxM(&(new_matrix->m[0]), m, multiplying_matrix);
+
+    printM( m , "Matriz de rotacion " ); 
+    printM( ( double * ) &(sel_ptr -> mptr -> m) , "Matriz del objeto"); 
+
+    MxM( ( double *) &(new_matrix-> m) , m, multiplying_matrix);
 
     new_matrix->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_matrix;
 
-    printM( ( double * ) &(sel_ptr -> mptr -> m) );
+    printM( ( double * ) &(sel_ptr -> mptr -> m), " Matriz final: " );
 
 }

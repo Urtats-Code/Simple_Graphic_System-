@@ -144,3 +144,16 @@ void rotateZ( double *rz , int direction ){
     }
 
 }
+
+
+void scale( double *m, int direction ) {
+
+    double scale = SCALING_VALUE; 
+
+    if( direction == NEGATIVE_DIRECTION ) scale = 1/scale;
+
+    m[ DIAGONAL_X ] = scale;
+    m[ DIAGONAL_Y ] = scale;
+    m[ DIAGONAL_Z ] = scale;
+
+}

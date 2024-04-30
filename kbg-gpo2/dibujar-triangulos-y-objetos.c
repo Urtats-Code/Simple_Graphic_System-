@@ -135,14 +135,7 @@ void print_matrizea(char *str)
 // TODO
 // aurrerago egitekoa
 // para más adelante
-void mxp(punto *pptr, double m[16], punto p)
-{
-    pptr->x = p.x;
-    pptr->y = p.y;
-    pptr->z = p.z;
-    pptr->u = p.u;
-    pptr->v = p.v;
-}
+
 
 void punto_de_corte(punto *p_arriba_ptr, punto *p_abajo_ptr, int altura, punto *p_centro_prt)
 {
@@ -185,9 +178,13 @@ void dibujar_triangulo(triobj *optr, int i)
         return;
     
     tptr = optr->triptr + i;
+
+    // Multiply points by the transformation matrix
+
     mxp(&p1, optr->mptr->m, tptr->p1);
     mxp(&p2, optr->mptr->m, tptr->p2);
     mxp(&p3, optr->mptr->m, tptr->p3);
+
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -229,6 +226,7 @@ void dibujar_triangulo(triobj *optr, int i)
 
     for (i = pgoiptr->y; i > perdiptr->y; i = i - 1)
     {
+
         punto_de_corte(pgoiptr, perdiptr, i, &corte1);
         punto_de_corte(pgoiptr, pbeheptr, i, &corte2);
 
@@ -251,11 +249,15 @@ void dibujar_triangulo(triobj *optr, int i)
 
         if (corte1.x > corte2.x)
         {
+
             dibujar_linea_z(i, corte2.x, corte2.z, corte2.u, corte2.v, corte1.x, corte1.z, corte1.u, corte1.v);
+
         }
         else
         {
+
             dibujar_linea_z(i, corte1.x, corte1.z, corte1.u, corte1.v, corte2.x, corte2.z, corte2.u, corte2.v);
+
         }
 
     }
@@ -287,6 +289,7 @@ static void marraztu(void)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
+
 
     triangulosptr = sel_ptr->triptr;
 
@@ -324,6 +327,7 @@ void read_from_file(char *fitx)
 
     // printf("%s fitxategitik datuak hartzera\n",fitx);
     optr = (triobj *) malloc(sizeof(triobj));
+    
     retval = cargar_triangulos(fitx, &(optr -> num_triangles), &(optr->triptr));
     if (retval != 1)
     {
@@ -336,9 +340,9 @@ void read_from_file(char *fitx)
 
         // printf("objektuaren matrizea...\n");
 
-        optr->mptr = (mlist *)malloc(sizeof(mlist));
+        optr->mptr = (mlist *) malloc( sizeof( mlist ) );
 
-        transform_into_identity_matrix( &( optr -> mptr -> m ) ); 
+        transform_into_identity_matrix( &( optr -> mptr -> m[0] ) ); 
 
         optr -> mptr -> hptr = 0;
 
@@ -355,6 +359,19 @@ void read_from_file(char *fitx)
 
 
 
+void scale_object( int direction ) {
+
+    double herlper_matrix[ 16 ] = { 0 }; 
+
+    transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
+
+    scale( &( herlper_matrix ), direction );
+
+    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
+    else  M_Left( ( double * ) &herlper_matrix ); 
+
+}
+
 void x_aldaketa(int dir)
 {
 
@@ -364,9 +381,8 @@ void x_aldaketa(int dir)
 
     if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
     if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, X_AXIS, dir );
-
-
-    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix[ 0 ] ); 
+    
+    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
 
 }
@@ -378,11 +394,10 @@ void y_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    if( aldaketa == TRANSLATE ) {
-        translate( herlper_matrix, Y_AXIS, dir ); 
-    }
+    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
+    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir );
 
-    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix[ 0 ] ); 
+    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
 
 
@@ -391,13 +406,17 @@ void y_aldaketa(int dir)
 void z_aldaketa(int dir)
 {
 
-    // double herlper_matrix[ 16 ] = { 0 }; 
 
-    // transform_into_identity_matrix( &herlper_matrix ); 
+    double herlper_matrix[ 16 ] = { 0 }; 
 
-    // if( aldaketa == TRANSLATE ) {
-    //     translate( herlper_matrix, Z_AXIS, dir ); 
-    // }
+    transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
+
+    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Z_AXIS, dir ); 
+    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Z_AXIS, dir );
+
+    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
+    else  M_Left( ( double * ) &herlper_matrix ); 
+
 
 }
 
@@ -451,11 +470,22 @@ static void teklatua(unsigned char key, int x, int y)
             lineak = 1;
         break;
     case 't':
-        printf(" You are now TRANSLATING MODE \n");
+        printf(" You are now in TRANSLATING MODE \n");
         aldaketa = 't';
         break;
     case 'r':
+        printf(" You are now in ROTATING MODE \n");
         aldaketa = 'r';
+        break;
+
+    case EXPAND: 
+        printf(" You are now in EXPANDING ITEM \n");
+        scale_object( 1 );
+        break;
+
+    case RETRACT: 
+        printf(" You are now in RETRACTING ITEM \n");
+        scale_object( 0 );
         break;
     case 'g':
         if (ald_lokala == 1)
@@ -481,6 +511,7 @@ static void teklatua(unsigned char key, int x, int y)
     case 'Z':
         z_aldaketa(0);
         break;
+
     case 'u':
         undo();
         break;
@@ -532,8 +563,8 @@ static void teklatua(unsigned char key, int x, int y)
     }
 
     // The screen must be drawn to show the new triangle
-    glutPostRedisplay();
 
+    glutPostRedisplay();
 }
 
 int main(int argc, char **argv)
@@ -548,11 +579,10 @@ int main(int argc, char **argv)
     glutInitWindowPosition(100, 100);
     glutCreateWindow("KBG/GO praktika");
 
-    glutDisplayFunc( marraztu);
+    glutDisplayFunc(marraztu);
     glutKeyboardFunc(teklatua);
     /* we put the information of the texture in the buffer pointed by bufferra. The dimensions of the texture are loaded into dimx and dimy */
     retval = load_ppm("foto_urtats.ppm", &bufferra, &dimx, &dimy);
-
     if (retval != 1)
     {
         printf("Ez dago texturaren fitxategia (foto_urtats.ppm)\n");
@@ -576,6 +606,7 @@ int main(int argc, char **argv)
     if (argc > 1) read_from_file(argv[1]);
     else read_from_file("z.txt");
 
+    glutMainLoop();
 
     return 0;
 }
