@@ -427,6 +427,13 @@ void z_aldaketa(int dir)
 
 void undo()
 {
+    int not_initial_position = sel_ptr -> mptr -> hptr != 0;
+
+    if( not_initial_position ){
+        mlist* current_matrix = sel_ptr -> mptr;
+        sel_ptr -> mptr = current_matrix -> hptr;
+    }
+
 }
 
 // This function will be called whenever the user pushes one key
