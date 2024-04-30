@@ -358,6 +358,11 @@ void read_from_file(char *fitx)
 }
 
 
+/**
+ ************************************************************************ 
+ *                           ITEM TRANSFORMATIONS
+ ************************************************************************  
+ */
 
 void scale_object( int direction ) {
 
@@ -469,13 +474,13 @@ static void teklatua(unsigned char key, int x, int y)
         else
             lineak = 1;
         break;
-    case 't':
+    case TRANSLATE:
         printf(" You are now in TRANSLATING MODE \n");
-        aldaketa = 't';
+        aldaketa = TRANSLATE;
         break;
-    case 'r':
+    case ROTATE:
         printf(" You are now in ROTATING MODE \n");
-        aldaketa = 'r';
+        aldaketa = ROTATE;
         break;
 
     case EXPAND: 
