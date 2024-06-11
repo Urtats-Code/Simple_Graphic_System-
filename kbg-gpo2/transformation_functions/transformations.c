@@ -76,12 +76,22 @@ void translateZ( double *m, int direction ){
 
  */
 
-void rotate(  double *m, char axis, int direction ){
+void rotate(  double *m, char axis, int direction, int transform_camera ){
 
-    if( axis == X_AXIS) rotateX( m, direction ); 
-    if( axis == Y_AXIS) rotateY( m, direction ); 
-    if( axis == Z_AXIS) rotateZ( m, direction ); 
+    if( transform_camera ){
 
+        if( axis == Y_AXIS) rotateX( m, direction ); 
+        if( axis == X_AXIS) rotateY( m, direction ); 
+        if( axis == Z_AXIS) rotateZ( m, direction ); 
+
+    } else {
+
+        if( axis == X_AXIS) rotateX( m, direction ); 
+        if( axis == Y_AXIS) rotateY( m, direction ); 
+        if( axis == Z_AXIS) rotateZ( m, direction ); 
+
+    }
+    
 }
 
 void rotateX( double *rx , int direction ){

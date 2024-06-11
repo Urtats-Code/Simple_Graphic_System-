@@ -1,7 +1,5 @@
 #include "cargar-triangulo.h"
 
-
-
 typedef struct mlist
 {
     double m[16];
@@ -35,3 +33,20 @@ int ald_lokala;
 // Helper vars
  
 char adding_file_type[100];
+
+
+
+// States
+
+int perspective_mode; 
+int transform_camera; 
+int camera_view; 
+int analisis_mode; 
+int backface_culling;
+
+// Projection matrix
+
+double MProjection[16]; 
+double MCsr[16]; 
+double Modelview[16]; 
+double test_variable[16];

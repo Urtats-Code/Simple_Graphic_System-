@@ -23,20 +23,19 @@ void M_Left( double *m ) {
     double *multiplying_matrix;
     mlist *new_matrix;
 
-    printM( m , " Matriz de transformacion " ); 
-    printM( ( double * ) &(sel_ptr -> mptr -> m) , "Matriz del objeto"); 
+    triobj *using_ptr; 
 
+    if( transform_camera ) using_ptr = cam_ptr; 
+    else using_ptr = sel_ptr; 
 
     new_matrix = (mlist *)malloc (sizeof(mlist));
 
-    multiplying_matrix = &(sel_ptr->mptr->m[0]);
+    multiplying_matrix = &(using_ptr->mptr->m[0]); 
 
     MxM(&(new_matrix->m[0]), multiplying_matrix, m);
 
-    new_matrix->hptr = sel_ptr->mptr;
-    sel_ptr->mptr = new_matrix;
-
-    printM( ( double * ) &(sel_ptr -> mptr -> m), " Matriz final: " );
+    new_matrix->hptr = using_ptr->mptr;
+    using_ptr->mptr = new_matrix;
 
 }
 
@@ -45,21 +44,18 @@ void M_Right( double *m ){
     double *multiplying_matrix;
     mlist *new_matrix;
 
+    triobj *using_ptr; 
+
+    if( transform_camera ) using_ptr = cam_ptr; 
+    else using_ptr = sel_ptr; 
+
     new_matrix = (mlist *)malloc (sizeof(mlist));
 
-    multiplying_matrix = (double * ) &(sel_ptr -> mptr -> m)  ;
-
-
-    
-    printM( m , " Matriz de transformacion " ); 
-    printM( ( double * ) &(sel_ptr -> mptr -> m) , "Matriz del objeto"); 
+    multiplying_matrix = (double * ) &(using_ptr -> mptr -> m)  ;
 
     MxM( ( double *) &(new_matrix-> m) , m, multiplying_matrix);
 
-    new_matrix->hptr = sel_ptr->mptr;
-    sel_ptr->mptr = new_matrix;
-
-
-    printM( ( double * ) &(sel_ptr -> mptr -> m), " Matriz final: " );
+    new_matrix->hptr = using_ptr->mptr;
+    using_ptr->mptr = new_matrix;
 
 }

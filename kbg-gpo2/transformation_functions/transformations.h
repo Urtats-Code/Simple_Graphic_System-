@@ -8,10 +8,11 @@ void translateZ( double *m, int direction);
 
 // Rotations 
 
-void rotate(  double *m, char axis, int direction );
+void rotate(  double *m, char axis, int direction, int transform_camera );
 void rotateX( double *m , int direction );
 void rotateY( double *m , int direction );
 void rotateZ( double *m , int direction );
+
 
 // Scaling 
 

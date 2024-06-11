@@ -6,6 +6,11 @@
 
 // Change options
 
+#define VIEW_FROM_CAMERA_PERSPECTIVE 'C'
+#define SELECT_CAMERA 'c'
+
+#define SET_PERSPECTIVE_MDOE 'p'
+
 #define TRANSLATE 't'
 #define ROTATE 'r'
 #define EXPAND 's'
@@ -52,12 +57,3 @@
 
 #define SCALING_VALUE 1.3
 
-
-/**
- ************************************************ 
- *                  CAMERA
- ************************************************ 
- */
-
-
-#define SELECT_CAMERA 'c'
