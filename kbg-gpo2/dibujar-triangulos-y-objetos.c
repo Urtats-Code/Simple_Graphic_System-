@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 // Geometry loading
 #include "common_structures.h"
@@ -39,52 +40,60 @@
 #include "./transformation_functions/transformations.h"
 
 
-int is_visible( triobj *point_of_view_ptr, triobj *looking_ptr, int triangle_index ){
 
-    punto p1, normal_helper;  
-    hiruki *triangle; 
-    double angle; 
-    double normal[ 3 ] = { 0 }; 
-    double camera[ 3 ] = { 0 }; 
-
-    triangle = looking_ptr -> triptr + triangle_index; 
-
-    if( perspective_mode ) {   
-        
-        camera[ 0 ] = point_of_view_ptr -> mptr -> m[ 3 ];
-        camera[ 1 ] = point_of_view_ptr -> mptr -> m[ 7 ];
-        camera[ 2 ] = point_of_view_ptr -> mptr -> m[ 11 ];
-
-        mxp( ( punto * ) &p1, ( double * ) looking_ptr -> mptr -> m, p1 );
-
-        camera[ 0 ] -= p1.x; 
-        camera[ 1 ] -= p1.y; 
-        camera[ 2 ] -= p1.z; 
-
-    } else {                   
-        camera[ 0 ] = point_of_view_ptr -> mptr -> m[ 2 ];
-        camera[ 1 ] = point_of_view_ptr -> mptr -> m[ 6 ];
-        camera[ 2 ] = point_of_view_ptr -> mptr -> m[ 10 ];
-    }
-
-    MxV( ( double * ) &normal, ( double * ) looking_ptr -> mptr -> m, ( double * ) triangle -> N ); 
-
-    normalize(( double * ) &normal ); 
-    normalize(( double * ) &camera ); 
-
-    angle = dot( ( double * ) &normal , ( double * ) &camera ); 
+void printV( double *m, char *custom_message ){
     
-    glColor3ub(255, 255, 255);
+    int i;
 
-    if( angle <= 0 ) { // Is not viisble 
+    printf(" %s :\n", custom_message );
 
-        if( backface_culling ){
-            glColor3ub( 255, 0 , 0 );
-        } else {
-            return 1; 
-        }
-
+    printf( "( ");
+    for( i = 0; i < 3 ; i ++ ){
+        printf( "  %f ", m[i] ); 
     }
+    printf( " ) \n");
+}
+
+
+int is_visible( triobj *view_ptr, triobj *looking_ptr, int triangle_index ){
+
+    hiruki *triangle; 
+    punto projected_point; 
+    double angle; 
+    double normal[3];
+    double view_vector[ 3 ] = { 0 };
+    double E_cam[ 3 ] = { 0 }; 
+
+    triangle = ( looking_ptr -> triptr  ) + triangle_index;
+
+    if( perspective_mode ) {
+
+        view_vector[ 0 ] = view_ptr -> mptr -> m[ 3 ];
+        view_vector[ 1 ] = view_ptr -> mptr -> m[ 7 ];
+        view_vector[ 2 ] = view_ptr -> mptr -> m[ 11 ];
+
+        mxp( &projected_point,  looking_ptr -> mptr -> m,  triangle -> p1 ); 
+
+        view_vector[ 0 ] -=  ( projected_point.x ) ;
+        view_vector[ 1 ] -=  ( projected_point.y ) ;
+        view_vector[ 2 ] -=  ( projected_point.z ) ;
+
+    } else { 
+        view_vector[ 0 ] = view_ptr -> mptr -> m[ 2 ];
+        view_vector[ 1 ] = view_ptr -> mptr -> m[ 6 ];
+        view_vector[ 2 ] = view_ptr -> mptr -> m[ 10 ];
+    }
+    
+    mxvector( ( double * ) &normal , ( double * ) &( looking_ptr -> mptr -> m), ( double * ) &( triangle -> N ) );
+    angle = dot( ( double * ) &normal  , ( double * ) &view_vector ); 
+
+
+    glColor3ub( 255, 255 , 255 );  
+
+    if( angle < 0 ){
+        if( backface_culling ) return 0; 
+        glColor3ub( 255, 0 , 0 );  
+    } 
 
     return 1; 
 
@@ -92,25 +101,69 @@ int is_visible( triobj *point_of_view_ptr, triobj *looking_ptr, int triangle_ind
 
 void rotate_analisis( double *rotation_M, double *at, int direction, char axis ) {
 
+    double cosine, sine; 
+    double x, y, z; 
     double M_helper[ 16 ]   = { 0 }; 
     double M_At[ 16 ]       = { 0 }; 
     double minus_M_At[ 16 ] = { 0 }; 
+    double M_rotate[ 16 ]   = { 0 };
+
+    if( direction == POSITIVE_DIRECTION ){
+        cosine = cos( ROTATION_ALPHA );
+        sine   = sin( ROTATION_ALPHA );
+    } else { 
+        cosine = cos( - ROTATION_ALPHA );
+        sine   = sin( - ROTATION_ALPHA );
+    }
 
     transform_into_identity_matrix( ( double * ) &M_At );
     transform_into_identity_matrix( ( double * ) &minus_M_At );
+    transform_into_identity_matrix( ( double * ) &M_helper );
 
-    M_At[ 0 ] = - at[ 0 ];
-    M_At[ 1 ] = - at[ 1 ];
-    M_At[ 2 ] = - at[ 2 ];
+    M_At[ 3 ] = sel_ptr -> mptr -> m[ 3 ];
+    M_At[ 7 ] = sel_ptr -> mptr -> m[ 7 ];
+    M_At[ 11 ] = sel_ptr -> mptr -> m[ 11 ];
 
-    minus_M_At[ 0 ] = at[ 0 ];
-    minus_M_At[ 1 ] = at[ 1 ];
-    minus_M_At[ 2 ] = at[ 2 ];
+    minus_M_At[ 3 ] =  -M_At[ 3 ];
+    minus_M_At[ 7 ] =  -M_At[ 7 ];
+    minus_M_At[ 11 ] =  -M_At[ 11 ];
 
-    rotate( rotation_M, axis, direction, 1 ); // We are always rotaion in analisis mode with the camera 
+    if( axis  ==  X_AXIS ) {
+        x = cam_ptr -> mptr -> m[ 0 ]; 
+        y = cam_ptr -> mptr -> m[ 4 ]; 
+        z = cam_ptr -> mptr -> m[ 8 ]; 
+    }
 
-    MxM( ( double * ) &M_helper,  ( double * ) &rotation_M, ( double * ) minus_M_At );
-    MxM( ( double * ) &rotation_M,  ( double * ) &M_helper, ( double * ) M_At );
+    if( axis  ==  Y_AXIS ) {
+        x = cam_ptr -> mptr -> m[ 1 ]; 
+        y = cam_ptr -> mptr -> m[ 5 ]; 
+        z = cam_ptr -> mptr -> m[ 9 ]; 
+    }
+
+    if( axis  ==  Z_AXIS ) {
+        x = cam_ptr -> mptr -> m[ 2 ]; 
+        y = cam_ptr -> mptr -> m[ 6 ]; 
+        z = cam_ptr -> mptr -> m[ 10 ]; 
+    }
+
+    M_helper[ 0 ] = cosine + ( 1 - cosine ) * ( x * x );
+    M_helper[ 1 ] = ( 1 - cosine ) * x * y  - z * sine;
+    M_helper[ 2 ] = ( 1 - cosine  ) * x * z + y * sine;
+
+
+    M_helper[ 4 ] = ( 1 - cosine ) * x * y + z * sine; 
+    M_helper[ 5 ] = cosine + ( 1 - cosine ) *  ( y * y );
+    M_helper[ 6 ] = ( 1 - cosine ) * y * z - x * sine;
+
+
+    M_helper[ 8 ] = ( 1 - cosine ) * x * z - y * sine;
+    M_helper[ 9 ] = ( 1 - cosine ) * y * z + x * sine;
+    M_helper[ 10 ] = cosine + ( 1 - cosine ) * ( z * z );
+
+    
+    MxM( ( double * ) &M_rotate,   ( double * ) &M_helper , ( double * ) &minus_M_At);
+    MxM( rotation_M, ( double * ) &M_At, ( double * ) &M_rotate);
+
 
 } 
 
@@ -138,9 +191,9 @@ void calculate_MCSR ( double *saving_matrix, triobj *selected_camera ){
     double Y[ 4 ] = { camera_matrix[ 1 ], camera_matrix[ 5 ], camera_matrix[ 9 ],  0 };
     double Z[ 4 ] = { camera_matrix[ 2 ], camera_matrix[ 6 ], camera_matrix[ 10 ], 0 };
 
-    double Ex = - dot( ( double * ) X,  ( double * ) E );
-    double Ey = - dot( ( double * ) Y,  ( double * ) E );
-    double Ez = - dot( ( double * ) Z,  ( double * ) E );
+    double Ex = -1 * dot( ( double * ) X,  ( double * ) E );
+    double Ey = -1 * dot( ( double * ) Y,  ( double * ) E );
+    double Ez = -1 * dot( ( double * ) Z,  ( double * ) E );
 
     // Move camera to the origin 
     // Transpose the matrix
@@ -174,7 +227,7 @@ void calculate_MCSR ( double *saving_matrix, triobj *selected_camera ){
  * @param saving_matrix 
  */
 
-void set_perspective_matrix( double *saving_matrix ) {
+void  set_perspective_matrix( double *saving_matrix ) {
 
     // Values to calculate the perspective matrix ( 91,5 deg )
 
@@ -183,7 +236,7 @@ void set_perspective_matrix( double *saving_matrix ) {
     double l = 5.13264357; 
     double r = -5.13264357; 
     double n = 5.0; 
-    double f = 500.0; 
+    double f = 2000.0; 
 
     transform_into_identity_matrix( saving_matrix ); 
 
@@ -354,7 +407,7 @@ void dibujar_triangulo(triobj *optr, int i)
     punto *pgoiptr, *pbeheptr, *perdiptr, corte1, corte2;
     float x1, h1, z1, u1, v1, x2, h2, z2, u2, v2, x3, h3, z3, u3, v3;
     float c1x, c1z, c1u, c1v, c2x, c2z, c2u, c2v;
-    int linea;
+    int linea, a, b, c;
     float cambio1, cambio1z, cambio1u, cambio1v, cambio2, cambio2z, cambio2u, cambio2v;
     punto p1, p2, p3;
 
@@ -363,18 +416,52 @@ void dibujar_triangulo(triobj *optr, int i)
     
     tptr = optr -> triptr + i;
 
+    double *n = tptr -> N; 
+    
     // Multiply points by the transformation matrix
 
-    mxp(&p1, ( double * ) Modelview, tptr->p1);
-    mxp(&p2, ( double * ) Modelview, tptr->p2);
-    mxp(&p3, ( double * ) Modelview, tptr->p3);
+    double ProjectedModelView[ 16 ]; 
+
+    MxM( ( double * ) &ProjectedModelView, ( double * ) &MProjection, ( double * ) &Modelview );
+
+    a = mxp(&p1, ( double * ) ProjectedModelView, tptr->p1);
+    b = mxp(&p2, ( double * ) ProjectedModelView, tptr->p2);
+    c = mxp(&p3, ( double * ) ProjectedModelView, tptr->p3);
+
+    if( a == -1 | b == -1 | c == -1 ) return ; 
 
     if (lineak == 1)
     {
+        if (optr != cam_ptr){
+
+            double *normal = tptr -> N; 
+            double point[ 3 ] =  { tptr -> p1.x + 50 * normal[ 0 ],  tptr -> p1.y + 50 * normal[ 1 ], tptr -> p1.z + 50 * normal[ 2 ] };
+            double projected_point[ 3 ]; 
+
+            mxpunto( ( double * ) &projected_point, ( double * ) &ProjectedModelView, ( double * ) &point );
+
+            // if( perspective_mode ) {
+            //     mxpunto( ( double * ) &projected_point, ( double * ) &MProjection, ( double * ) &projected_point );
+            // }
+            
+            // printV( &projected_point, "Punto projectado: ");
+
+            // double projected_normal[ 3 ]; 
+            // mxvector( ( double * ) &projected_normal, ( double * ) &ProjectedModelView, ( double * ) &(tptr -> N) );
+            
+            // Normals working
+            glBegin(GL_LINES);
+            glVertex3d(p1.x, p1.y, p1.z);
+            glVertex3d(projected_point[0], projected_point[1], projected_point[2]);
+            // glVertex3d(p1.x + 50 * projected_normal[ 0 ], p1.y + 50 * projected_normal[ 1 ], p1.y + 50 * projected_normal[ 2 ]);
+            glEnd();
+        }
+
         glBegin(GL_POLYGON);
         glVertex3d(p1.x, p1.y, p1.z);
         glVertex3d(p2.x, p2.y, p2.z);
         glVertex3d(p3.x, p3.y, p3.z);
+    
         glEnd();
         return;
     }
@@ -453,6 +540,8 @@ static void marraztu( void )
     int i, j;
     triobj *auxptr, *view_ptr;
 
+    
+
     /*
     unsigned char* colorv;
     unsigned char r,g,b;
@@ -480,12 +569,12 @@ static void marraztu( void )
     double M_Helper[ 16 ] = { 0 }; 
     transform_into_identity_matrix( ( double * ) &M_Helper );
 
-    // Set Mprojection 
+    // Set Mprojection  
 
     if ( perspective_mode ) { 
         set_perspective_matrix( ( double * ) &MProjection ); 
     } else { 
-        transform_into_identity_matrix( ( double * )  MProjection );
+        transform_into_identity_matrix( ( double * )  &MProjection );
         glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
     } 
 
@@ -518,9 +607,8 @@ static void marraztu( void )
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
 
-                MxM( ( double * ) &M_Helper, ( double * ) &MCsr, auxptr -> mptr -> m );
-                MxM( ( double * ) &Modelview, ( double * ) &MProjection,   ( double * ) &M_Helper );
-
+                MxM( ( double * ) &Modelview, ( double * ) &MCsr, auxptr -> mptr -> m );
+                
                 for (i = 0; i < auxptr -> num_triangles; i++)
                 {
                     if( is_visible( view_ptr, auxptr, i ) ) {
@@ -532,8 +620,8 @@ static void marraztu( void )
             for (auxptr = fcamprt; auxptr != 0; auxptr = auxptr -> hptr)
             {
 
-                MxM( ( double * ) &M_Helper, ( double * ) &MCsr, auxptr -> mptr -> m );
-                MxM( ( double * ) &Modelview, ( double * ) &MProjection,   ( double * ) &M_Helper );
+                MxM( ( double * ) &Modelview, ( double * ) &MCsr, auxptr -> mptr -> m );
+                
 
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
@@ -549,7 +637,7 @@ static void marraztu( void )
             for (i = 0; i < sel_ptr->num_triangles; i++)
             {
 
-                if ( is_visible( sel_ptr, auxptr, i ) ) {
+                if ( is_visible( sel_ptr,  auxptr, i ) ) {
                     dibujar_triangulo(sel_ptr, i);
                 }
             }
@@ -557,7 +645,7 @@ static void marraztu( void )
             for (i = 0; i < cam_ptr -> num_triangles; i++)
             {
 
-                if( is_visible( cam_ptr, auxptr, i ) ){
+                if ( is_visible( cam_ptr,  auxptr, i ) ) {
                 
                     dibujar_triangulo(sel_ptr, i);
 
@@ -572,7 +660,6 @@ static void marraztu( void )
 
     }
 
-    printf( " --------------------------\n" );
 
     glFlush();
 }
@@ -584,9 +671,10 @@ void read_from_file( char *fitx, triobj **list_ptr, int is_camera )
 
     // printf("%s fitxategitik datuak hartzera\n",fitx);
     optr = (triobj *) malloc(sizeof(triobj));
-    
-    retval = cargar_triangulos(fitx, &(optr -> num_triangles), &(optr->triptr));
-    if (retval != 1)
+    unsigned char *color; 
+    color = "c255255255";
+    retval = cargar_triangulos_color(fitx, &(optr -> num_triangles), &(optr->triptr), &(color));
+    if (retval == 1)
     {
         printf("%s fitxategitik datuak hartzerakoan arazoak izan ditut\n    Problemas al leer\n", fitxiz);
         free(optr);
@@ -656,26 +744,24 @@ void x_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
-    if( aldaketa == ROTATE )    { 
+    if( analisis_mode ){
 
-        if( analisis_mode && camera_view ){
-
-            printf( "You are rotating in analisis mode" );
-
-            double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] }; 
-            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS ); 
-
-            printM( ( double * ) &herlper_matrix, " Matriz de rotacion en analisis" );
-            printM( ( double * ) cam_ptr -> mptr -> m, " Matriz de rotacion en analisis" );
-
-        } else {
-            rotate(    ( double * ) &herlper_matrix, X_AXIS, dir, transform_camera );
+        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+        if( aldaketa == ROTATE ){
+            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
+            printM( ( double * ) &herlper_matrix, " The rotation matrix is: " );
         }
 
-    }
+
+    } else {
     
-    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
+        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
+        if( aldaketa == ROTATE )   rotate(    ( double * ) &herlper_matrix, X_AXIS, dir, transform_camera );    
+
+    }
+
+    
+    if( ald_lokala ) M_Left( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
 
 }
@@ -687,18 +773,16 @@ void y_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    if( aldaketa == TRANSLATE  && !analisis_mode ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
-    if( aldaketa == ROTATE ) { 
+    if( analisis_mode ){
 
-        if( analisis_mode && camera_view ){
+        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+        if( aldaketa == ROTATE ) rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
+        printM( ( double * ) &herlper_matrix, " The rotation matrix is: " );
 
-            double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] }; 
-            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Z_AXIS ); 
+    } else {
 
-        } else {
-            rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir, transform_camera );
-        }
-        
+        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
+        if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir, transform_camera );
     }
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
@@ -707,8 +791,7 @@ void y_aldaketa(int dir)
 
 }
 
-void z_aldaketa(int dir)
-{
+void z_aldaketa(int dir) {
 
 
     double herlper_matrix[ 16 ] = { 0 }; 
@@ -716,18 +799,7 @@ void z_aldaketa(int dir)
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
     if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Z_AXIS, dir    ); 
-    
-    if( aldaketa == ROTATE ){
-
-        if( analisis_mode && camera_view ){
-
-            printf("You can not rotate in Z axis in analysis mode. \n" ); 
-
-        } else {
-            rotate(    ( double * ) &herlper_matrix, Z_AXIS, dir, transform_camera );
-        }
-
-    }
+    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Z_AXIS, dir, transform_camera );
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
@@ -735,14 +807,18 @@ void z_aldaketa(int dir)
 
 }
 
-void undo()
-{
+void undo() {
 
-    int not_initial_position = sel_ptr -> mptr -> hptr != 0;
+    triobj *aux_ptr; 
+
+    if( camera_view ) aux_ptr = cam_ptr; 
+    else aux_ptr = sel_ptr;
+
+    int not_initial_position = aux_ptr -> mptr -> hptr != 0;   
 
     if( not_initial_position ){
-        mlist* current_matrix = sel_ptr -> mptr;
-        sel_ptr -> mptr = current_matrix -> hptr;
+        mlist* current_matrix = aux_ptr -> mptr;
+        aux_ptr -> mptr = current_matrix -> hptr;
     }
 
 }
@@ -822,22 +898,17 @@ static void teklatua(unsigned char key, int x, int y)
 
     case 'g':
 
-        if (ald_lokala == 1) ald_lokala = 0;
-        else ald_lokala = 1;
+        if( ald_lokala ){
+            
+            ald_lokala = 0; 
 
-        if( analisis_mode ) {
-            analisis_mode = 0; 
         } else {
 
-            printf("You are now in analisis mode \n");
-            analisis_mode = 1; 
-            transform_camera = 1; 
-            camera_view = 1;
-            ald_lokala = 1;
-
-            look_at(); 
+            ald_lokala = 1; 
+            if( transform_camera ) look_at(); 
 
         }
+
 
         break;
 
@@ -889,19 +960,17 @@ static void teklatua(unsigned char key, int x, int y)
 
     case VIEW_FROM_CAMERA_PERSPECTIVE: 
 
-        analisis_mode = 0; 
-
-        if( camera_view ) camera_view = 0; 
-        else camera_view = 1; 
-
         if( camera_view ) {
-            transform_camera = 1; 
-            ald_lokala = 1; 
+            camera_view = 0; 
+            transform_camera = 0; 
+        } else {
+             camera_view = 1; 
+             transform_camera = 1;
         }
 
         break; 
     
-    case 'b':
+    case SET_BAKCFACE_CULLING:
 
         if( backface_culling ) backface_culling = 0; 
         else backface_culling = 1; 
@@ -954,24 +1023,24 @@ static void teklatua(unsigned char key, int x, int y)
 
         // If theres no item does nothing
 
-        if (foptr != 0)                         
-        {
+        if( transform_camera ) {
 
-            if( camera_view  ) { 
-                cam_ptr = cam_ptr->hptr;
-                /*The selection is circular, thus if we move out of the list we go back to the first element*/
-                if (cam_ptr == 0)
-                    cam_ptr = foptr;
-                indexx = 0; // the selected polygon is the first one
-            } else { 
-                sel_ptr = sel_ptr->hptr;
-                /*The selection is circular, thus if we move out of the list we go back to the first element*/
-                if (sel_ptr == 0)
-                    sel_ptr = foptr;
-                indexx = 0; // the selected polygon is the first one
-            }
-            
+            cam_ptr = cam_ptr -> hptr;
+
+            if ( cam_ptr == 0 ) cam_ptr = fcamprt;
+            indexx = 0;
+
+        }   else { 
+        
+            sel_ptr = sel_ptr->hptr;
+
+            if ( sel_ptr == 0 ) sel_ptr = foptr;
+            indexx = 0;
+
         }
+
+            
+        
         break;
     case 27: // <ESC>
         exit(0);
@@ -981,8 +1050,8 @@ static void teklatua(unsigned char key, int x, int y)
     }
 
     // The screen must be drawn to show the new triangle
-
     glutPostRedisplay();
+
 }
 
 int main(int argc, char **argv)
@@ -1016,7 +1085,7 @@ int main(int argc, char **argv)
     // Custom options
     denak = 1;
     lineak = 1;
-    ald_lokala = 1;
+    ald_lokala = 0;
     objektuak = 1;
 
     // Object list
@@ -1043,11 +1112,13 @@ int main(int argc, char **argv)
     { 
         // Cameras 
         read_from_file( "camara.txt", &fcamprt, 1 );
+        read_from_file( "camara.txt", &fcamprt, 1 );
 
         fcamprt -> mptr -> m[ TZ ] = 250; 
 
         // Object
         read_from_file( "z.txt",      &foptr,   0  );
+        read_from_file( "k.txt",      &foptr,   0  );
         
         foptr -> mptr -> m[ TX ] = 250; 
 
