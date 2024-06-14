@@ -804,7 +804,7 @@ void z_aldaketa(int dir) {
 
     if( !ald_lokala && transform_camera ){
 
-        printf( "Moverme en Z para analisis" ); 
+        printf( "Moverme en Z para analisis \n" ); 
 
     } else { 
 
@@ -992,8 +992,12 @@ static void teklatua(unsigned char key, int x, int y)
             transform_camera = 0; 
             printf( "You are transforming the OBJECT \n ");
         } else {
+
             transform_camera = 1; 
             printf( "You are transforming the CAMERA \n ");
+
+            if( !ald_lokala ) look_at();
+
         }
 
         break;
@@ -1106,6 +1110,9 @@ static void teklatua(unsigned char key, int x, int y)
             cam_ptr = cam_ptr -> hptr;
 
             if ( cam_ptr == 0 ) cam_ptr = fcamprt;
+
+            if( !ald_lokala ) look_at();
+
             indexx = 0;
 
         }   else { 
