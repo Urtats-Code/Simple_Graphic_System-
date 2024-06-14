@@ -751,17 +751,17 @@ void x_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    // if( !ald_lokala && transform_camera ){
+    if( !ald_lokala && transform_camera ){
 
-    //     double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-    //     if( aldaketa == ROTATE ) rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
+        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
 
-    // } else { 
+    } else { 
 
-    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
-    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, X_AXIS, dir, transform_camera );    
+        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
+        if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, X_AXIS, dir, transform_camera );    
 
-    // }
+    }
     
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
@@ -776,9 +776,17 @@ void y_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
+    if( !ald_lokala && transform_camera ){
 
-    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
-    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir, transform_camera );
+        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
+
+    } else { 
+
+        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
+        if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir, transform_camera );    
+
+    }
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
@@ -794,8 +802,16 @@ void z_aldaketa(int dir) {
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
 
-    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Z_AXIS, dir    ); 
-    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Z_AXIS, dir, transform_camera );
+    if( !ald_lokala && transform_camera ){
+
+        printf( "Moverme en Z para analisis" ); 
+
+    } else { 
+
+        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Z_AXIS, dir    ); 
+        if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Z_AXIS, dir, transform_camera );
+
+    }
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
@@ -908,7 +924,10 @@ static void teklatua(unsigned char key, int x, int y)
 
             ald_lokala = 0; 
             printf("You are in GLOBAL mode \n");
-            if( transform_camera ) printf( "You are in ANALISIS mode \n");
+            if( transform_camera ) {
+                look_at(); 
+                printf( "You are in ANALISIS mode \n");
+            }
 
         } else {
 
