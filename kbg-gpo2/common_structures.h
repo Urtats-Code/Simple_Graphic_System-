@@ -43,6 +43,7 @@ int transform_camera;
 int camera_view; 
 int analisis_mode; 
 int backface_culling;
+int draw_normals; 
 
 // Projection matrix
 

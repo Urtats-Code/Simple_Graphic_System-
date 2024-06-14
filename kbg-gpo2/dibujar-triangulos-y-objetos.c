@@ -41,6 +41,20 @@
 
 
 
+void calculate_triangle_centroid( double *centroid, hiruki *triangle_ptr ){
+
+    double sumX, sumY, sumZ; 
+
+    sumX = triangle_ptr->p1.x + triangle_ptr->p2.x + triangle_ptr->p3.x;
+    sumY = triangle_ptr->p1.y + triangle_ptr->p2.y + triangle_ptr->p3.y;
+    sumZ = triangle_ptr->p1.z + triangle_ptr->p2.z + triangle_ptr->p3.z;
+
+    centroid[0] = sumX / 3;
+    centroid[1] = sumY / 3;
+    centroid[2] = sumZ / 3;
+
+}
+
 void printV( double *m, char *custom_message ){
     
     int i;
@@ -88,9 +102,10 @@ int is_visible( triobj *view_ptr, triobj *looking_ptr, int triangle_index ){
     angle = dot( ( double * ) &normal  , ( double * ) &view_vector ); 
 
 
+    const double EPSILON = 1e-6;
     glColor3ub( 255, 255 , 255 );  
 
-    if( angle < 0 ){
+    if( angle <= -EPSILON ){
         if( backface_culling ) return 0; 
         glColor3ub( 255, 0 , 0 );  
     } 
@@ -432,29 +447,21 @@ void dibujar_triangulo(triobj *optr, int i)
 
     if (lineak == 1)
     {
-        if (optr != cam_ptr){
+
+        if (optr != cam_ptr && draw_normals ){
 
             double *normal = tptr -> N; 
-            double point[ 3 ] =  { tptr -> p1.x + 50 * normal[ 0 ],  tptr -> p1.y + 50 * normal[ 1 ], tptr -> p1.z + 50 * normal[ 2 ] };
+            double point[ 3 ] =  { tptr -> p3.x + 50 * normal[ 0 ],  tptr -> p3.y + 50 * normal[ 1 ], tptr -> p3.z + 50 * normal[ 2 ] };
             double projected_point[ 3 ]; 
 
             mxpunto( ( double * ) &projected_point, ( double * ) &ProjectedModelView, ( double * ) &point );
-
-            // if( perspective_mode ) {
-            //     mxpunto( ( double * ) &projected_point, ( double * ) &MProjection, ( double * ) &projected_point );
-            // }
-            
-            // printV( &projected_point, "Punto projectado: ");
-
-            // double projected_normal[ 3 ]; 
-            // mxvector( ( double * ) &projected_normal, ( double * ) &ProjectedModelView, ( double * ) &(tptr -> N) );
             
             // Normals working
             glBegin(GL_LINES);
-            glVertex3d(p1.x, p1.y, p1.z);
-            glVertex3d(projected_point[0], projected_point[1], projected_point[2]);
-            // glVertex3d(p1.x + 50 * projected_normal[ 0 ], p1.y + 50 * projected_normal[ 1 ], p1.y + 50 * projected_normal[ 2 ]);
+                glVertex3d(p3.x, p3.y, p3.z);
+                glVertex3d(projected_point[0], projected_point[1], projected_point[2]);
             glEnd();
+
         }
 
         glBegin(GL_POLYGON);
@@ -744,24 +751,20 @@ void x_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    if( analisis_mode ){
+    // if( !ald_lokala && transform_camera ){
 
-        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-        if( aldaketa == ROTATE ){
-            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
-            printM( ( double * ) &herlper_matrix, " The rotation matrix is: " );
-        }
+    //     double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+    //     if( aldaketa == ROTATE ) rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
 
+    // } else { 
 
-    } else {
+    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
+    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, X_AXIS, dir, transform_camera );    
+
+    // }
     
-        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, X_AXIS, dir ); 
-        if( aldaketa == ROTATE )   rotate(    ( double * ) &herlper_matrix, X_AXIS, dir, transform_camera );    
 
-    }
-
-    
-    if( ald_lokala ) M_Left( ( double * ) &herlper_matrix ); 
+    if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
 
 }
@@ -773,17 +776,9 @@ void y_aldaketa(int dir)
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
 
-    if( analisis_mode ){
 
-        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-        if( aldaketa == ROTATE ) rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
-        printM( ( double * ) &herlper_matrix, " The rotation matrix is: " );
-
-    } else {
-
-        if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
-        if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir, transform_camera );
-    }
+    if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Y_AXIS, dir ); 
+    if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Y_AXIS, dir, transform_camera );
 
     if( ald_lokala ) M_Right( ( double * ) &herlper_matrix ); 
     else  M_Left( ( double * ) &herlper_matrix ); 
@@ -797,6 +792,7 @@ void z_aldaketa(int dir) {
     double herlper_matrix[ 16 ] = { 0 }; 
 
     transform_into_identity_matrix( &herlper_matrix[ 0 ] ); 
+
 
     if( aldaketa == TRANSLATE ) translate( ( double * ) &herlper_matrix, Z_AXIS, dir    ); 
     if( aldaketa == ROTATE )    rotate(    ( double * ) &herlper_matrix, Z_AXIS, dir, transform_camera );
@@ -814,11 +810,21 @@ void undo() {
     if( camera_view ) aux_ptr = cam_ptr; 
     else aux_ptr = sel_ptr;
 
-    int not_initial_position = aux_ptr -> mptr -> hptr != 0;   
+    int not_initial_position = sel_ptr -> mptr -> hptr != 0;   
+    int not_intial_position_camera = cam_ptr -> mptr -> hptr != 0;
 
-    if( not_initial_position ){
-        mlist* current_matrix = aux_ptr -> mptr;
-        aux_ptr -> mptr = current_matrix -> hptr;
+    if( not_initial_position ) {
+
+        mlist* current_matrix = sel_ptr -> mptr;
+        sel_ptr -> mptr = current_matrix -> hptr;
+
+    } else { 
+
+        if( not_intial_position_camera ) {
+            mlist* current_matrix = cam_ptr -> mptr;
+            cam_ptr -> mptr = current_matrix -> hptr;
+        }
+
     }
 
 }
@@ -899,13 +905,16 @@ static void teklatua(unsigned char key, int x, int y)
     case 'g':
 
         if( ald_lokala ){
-            
+
             ald_lokala = 0; 
+            printf("You are in GLOBAL mode \n");
+            if( transform_camera ) printf( "You are in ANALISIS mode \n");
 
         } else {
 
-            ald_lokala = 1; 
-            if( transform_camera ) look_at(); 
+            ald_lokala = 1;
+            printf( "You are in LOCAL mode \n");
+            if( transform_camera ) printf( "You are in FLIGHT mode \n" );
 
         }
 
@@ -942,40 +951,90 @@ static void teklatua(unsigned char key, int x, int y)
 
     case SET_PERSPECTIVE_MDOE: 
 
-        if( perspective_mode ) perspective_mode = 0; 
-        else perspective_mode = 1; 
+        if( perspective_mode ) {
 
-        if( perspective_mode ){
-            ald_lokala = 0; 
+            perspective_mode = 0; 
+            printf( "You are in PARALLALEL mode \n");
+
+        } else {
+
+            perspective_mode = 1; 
+            printf( "You are in PERSPECTIVE mode \n");
+            
         }
+
+
 
         break; 
     
     case SELECT_CAMERA:
         
-        if( transform_camera ) transform_camera = 0; 
-        else transform_camera = 1; 
+        if( transform_camera ){
+            transform_camera = 0; 
+            printf( "You are transforming the OBJECT \n ");
+        } else {
+            transform_camera = 1; 
+            printf( "You are transforming the CAMERA \n ");
+        }
 
         break;
 
     case VIEW_FROM_CAMERA_PERSPECTIVE: 
 
         if( camera_view ) {
+
             camera_view = 0; 
             transform_camera = 0; 
+
+            printf( "You are viewing from  the OBJECT PERSPECTIVE  \n ");
+            printf( "You are transforming the OBJECT \n ");
+
         } else {
-             camera_view = 1; 
-             transform_camera = 1;
+
+            camera_view = 1; 
+            transform_camera = 1;
+
+            printf( "You are viewing from  the OBJECT CAMERA  \n ");
+            printf( "You are transforming the CAMERA \n ");
+
         }
 
         break; 
     
     case SET_BAKCFACE_CULLING:
 
-        if( backface_culling ) backface_culling = 0; 
-        else backface_culling = 1; 
+        if( backface_culling ) {
+
+            backface_culling = 0; 
+            printf( "BACKFACE CULLING OFF \n" );
+
+        } else {
+
+            backface_culling = 1; 
+            printf( "BACKFACE CULLING ON \n" );
+        }
 
         break; 
+    case 'm':
+
+        look_at(); 
+
+        break; 
+    case 'n':
+
+        if( draw_normals ) {
+
+            draw_normals = 0; 
+            printf( "NORMALS OFF \n" );
+
+        } else {
+
+             draw_normals = 1; 
+            printf( "NOMALS ON \n" );
+
+        }
+
+        break;
 
     case 'f':
 
@@ -1085,8 +1144,9 @@ int main(int argc, char **argv)
     // Custom options
     denak = 1;
     lineak = 1;
-    ald_lokala = 0;
+    ald_lokala = 1;
     objektuak = 1;
+    draw_normals = 0; 
 
     // Object list
     foptr = 0;

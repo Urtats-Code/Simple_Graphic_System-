@@ -18,7 +18,7 @@
 
 */
 
-void M_Left( double *m ) {
+void M_Right( double *m ) {
     
     double *multiplying_matrix;
     mlist *new_matrix;
@@ -39,7 +39,7 @@ void M_Left( double *m ) {
 
 }
 
-void M_Right( double *m ){
+void M_Left( double *m ){
 
     double *multiplying_matrix;
     mlist *new_matrix;
