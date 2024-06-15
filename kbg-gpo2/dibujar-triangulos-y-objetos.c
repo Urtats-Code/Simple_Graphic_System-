@@ -804,7 +804,17 @@ void z_aldaketa(int dir) {
 
     if( !ald_lokala && transform_camera ){
 
-        printf( "Moverme en Z para analisis \n" ); 
+
+        if( aldaketa == ROTATE ){
+            double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Z_AXIS );
+        }
+
+        if( aldaketa == TRANSLATE ) {
+            translate( ( double * ) &herlper_matrix, Z_AXIS, dir    ); 
+            M_Right( ( double * ) &herlper_matrix ); 
+            return ; 
+        }
 
     } else { 
 
