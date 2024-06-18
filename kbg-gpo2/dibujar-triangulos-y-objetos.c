@@ -637,7 +637,7 @@ static void marraztu( void )
 
             for (auxptr = fcamprt; auxptr != 0; auxptr = auxptr -> hptr)
             {
-
+                
                 MxM( ( double * ) &Modelview, ( double * ) &MCsr, auxptr -> mptr -> m );
                 
 
