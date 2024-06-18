@@ -139,6 +139,24 @@ int mxp(punto *pptr, double m[16], punto p) {
 
 }
 
+void mxpunot_2(punto *pptr, double m[16], punto p) {
+
+    double x1,y1,z1,w;
+
+    x1 = m[0]*p.x + m[1]*p.y + m[2]*p.z   + 1 * m[3];
+    y1 = m[4]*p.x + m[5]*p.y + m[6]*p.z   + 1 * m[7];
+    z1 = m[8]*p.x + m[9]*p.y + m[10]*p.z  + 1 * m[11];
+
+
+    pptr->x = x1;
+    pptr->y = y1;
+    pptr->z = z1;
+
+    pptr->u = p.u;
+    pptr->v = p.v;
+
+}
+
 int mxpunto(double *pptr, double m[16], double *p ) {
 
     double x1,y1,z1,w;
@@ -187,12 +205,22 @@ void mxv(punto *pptr, double m[16], punto v)
 }
 
 
-void mxvector(double *vector, double *m, double *v)
+void mxvector(double *saving, double *m, double *v) {
+
+    saving[ 0 ] = ( m[ 0 ] * v[ 0 ] ) + ( m[1] * v[ 1 ] )  + ( m[2] * v[ 2 ] ) ;
+    saving[ 1 ] = ( m[ 4 ] * v[ 0 ] ) + ( m[5] * v[ 1 ] )  + ( m[6] * v[ 2 ] ) ;
+    saving[ 2 ] = ( m[ 8 ] * v[ 0 ] ) + ( m[9] * v[ 1 ] )  + ( m[10] * v[ 2 ] );
+
+
+}
+
+void mxvector2(double *saving, double *m, double *v)
 {
 
-    vector[ 0 ] = ( m[ 0 ] * v[ 0 ] ) + ( m[1] * v[ 1 ] )  + ( m[2] * v[ 2 ] );
-    vector[ 1 ] = ( m[ 4 ] * v[ 0 ] ) + ( m[5] * v[ 1 ] )  + ( m[6] * v[ 2 ] );
-    vector[ 2 ] = ( m[ 8 ] * v[ 0 ] ) + ( m[9] * v[ 1 ] )  + ( m[10] * v[ 2 ] );
+    saving[ 0 ] = ( m[ 0 ] * v[ 0 ] ) + ( m[1] * v[ 1 ] )  + ( m[2] * v[ 2 ] )  + ( m[3] * v[3]);
+    saving[ 1 ] = ( m[ 4 ] * v[ 0 ] ) + ( m[5] * v[ 1 ] )  + ( m[6] * v[ 2 ] )  + ( m[7] * v[3]);
+    saving[ 2 ] = ( m[ 8 ] * v[ 0 ] ) + ( m[9] * v[ 1 ] )  + ( m[10] * v[ 2 ] ) + ( m[11] * v[3]);
+    saving[ 3 ] = ( m[ 12 ] * v[ 0 ] ) + ( m[13] * v[ 1 ] )  + ( m[14] * v[ 2 ] ) + ( m[15 ] * v[3]);
 
 }
 
@@ -233,6 +261,7 @@ void normalize( double *v1 ){
 
 }
 
+
 void vector_product( double *saving_v, double *v1, double *v2 ){
 
     saving_v[ 0 ] = ( v1[ 1 ] * v2[ 2 ] ) - ( v1[ 2 ] * v2[ 1 ] ); 
@@ -245,8 +274,9 @@ void calculate_triangle_normal( double *saving_vector, hiruki *triangle ) {
 
     double v1 [ 3 ] = {  ( triangle -> p2.x - triangle -> p1.x ) , ( triangle -> p2.y - triangle -> p1.y ) ,  ( triangle -> p2.z - triangle -> p1.z )} ; 
     double v2 [ 3 ] = {  ( triangle -> p3.x - triangle -> p1.x ) , ( triangle -> p3.y - triangle -> p1.y ) ,  ( triangle -> p3.z - triangle -> p1.z )} ; 
+    
+    vector_product( saving_vector, &v1, &v2 );
 
-    vector_product( saving_vector, ( double * ) v1 , ( double * ) v2 ); 
     normalize( saving_vector );
 
 }

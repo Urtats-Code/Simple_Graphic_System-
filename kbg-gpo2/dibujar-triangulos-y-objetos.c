@@ -41,6 +41,7 @@
 
 
 
+
 void calculate_triangle_centroid( double *centroid, hiruki *triangle_ptr ){
 
     double sumX, sumY, sumZ; 
@@ -80,37 +81,41 @@ int is_visible( triobj *view_ptr, triobj *looking_ptr, int triangle_index ){
 
     triangle = ( looking_ptr -> triptr  ) + triangle_index;
 
+    mxvector( ( double * ) &normal , ( double * ) &Modelview, ( double * ) &( triangle -> N ) );
+
     if( perspective_mode ) {
 
-        view_vector[ 0 ] = view_ptr -> mptr -> m[ 3 ];
-        view_vector[ 1 ] = view_ptr -> mptr -> m[ 7 ];
-        view_vector[ 2 ] = view_ptr -> mptr -> m[ 11 ];
+        mxpunot_2( &projected_point,  &Modelview,  triangle -> p1 ); 
 
-        mxp( &projected_point,  looking_ptr -> mptr -> m,  triangle -> p1 ); 
+        view_vector[ 0 ] =  -( projected_point.x ) ;
+        view_vector[ 1 ] =  -( projected_point.y ) ;
+        view_vector[ 2 ] =  -( projected_point.z ) ;
 
-        view_vector[ 0 ] -=  ( projected_point.x ) ;
-        view_vector[ 1 ] -=  ( projected_point.y ) ;
-        view_vector[ 2 ] -=  ( projected_point.z ) ;
+        angle = dot( ( double * ) &normal  , ( double * ) &view_vector ); 
+
+            glColor3ub( 255, 255 , 255 );  
+        if( angle < 0 ){
+            glColor3ub( 255, 0 , 0 );  
+        } 
+        
+        if( !backface_culling ) return 1; 
+
+        return ( angle >= 0 ); 
+
 
     } else { 
-        view_vector[ 0 ] = view_ptr -> mptr -> m[ 2 ];
-        view_vector[ 1 ] = view_ptr -> mptr -> m[ 6 ];
-        view_vector[ 2 ] = view_ptr -> mptr -> m[ 10 ];
+
+        glColor3ub( 255, 255 , 255 );  
+        
+        if ( normal[ 2 ] < 0 ) {
+            glColor3ub( 255, 0 , 0 );  
+        } 
+
+        if( !backface_culling ) return 1; 
+
+        return (  normal[ 2 ] >= 0); 
     }
     
-    mxvector( ( double * ) &normal , ( double * ) &( looking_ptr -> mptr -> m), ( double * ) &( triangle -> N ) );
-    angle = dot( ( double * ) &normal  , ( double * ) &view_vector ); 
-
-
-    const double EPSILON = 1e-6;
-    glColor3ub( 255, 255 , 255 );  
-
-    if( angle <= -EPSILON ){
-        if( backface_culling ) return 0; 
-        glColor3ub( 255, 0 , 0 );  
-    } 
-
-    return 1; 
 
 } 
 
@@ -294,9 +299,9 @@ void look_at () {
     double Xc [ 3 ]  = { 0 };
     double Yc [ 3 ]  = { 0 };
     
-    Zc[ 0 ] = E[ 0 ] - At[ 0 ];
-    Zc[ 1 ] = E[ 1 ] - At[ 1 ];
-    Zc[ 2 ] = E[ 2 ] - At[ 2 ];
+    Zc[ 0 ] = - ( E[ 0 ] - At[ 0 ] );
+    Zc[ 1 ] = - ( E[ 1 ] - At[ 1 ] );
+    Zc[ 2 ] = - ( E[ 2 ] - At[ 2 ] );
     
     normalize( ( double * ) &Zc ); 
 
@@ -435,13 +440,10 @@ void dibujar_triangulo(triobj *optr, int i)
     
     // Multiply points by the transformation matrix
 
-    double ProjectedModelView[ 16 ]; 
 
-    MxM( ( double * ) &ProjectedModelView, ( double * ) &MProjection, ( double * ) &Modelview );
-
-    a = mxp(&p1, ( double * ) ProjectedModelView, tptr->p1);
-    b = mxp(&p2, ( double * ) ProjectedModelView, tptr->p2);
-    c = mxp(&p3, ( double * ) ProjectedModelView, tptr->p3);
+    a = mxp(&p1, ( double * ) &Modelview, tptr->p1);
+    b = mxp(&p2, ( double * ) &Modelview, tptr->p2);
+    c = mxp(&p3, ( double * ) &Modelview, tptr->p3);
 
     if( a == -1 | b == -1 | c == -1 ) return ; 
 
@@ -450,16 +452,17 @@ void dibujar_triangulo(triobj *optr, int i)
 
         if (optr != cam_ptr && draw_normals ){
 
-            double *normal = tptr -> N; 
-            double point[ 3 ] =  { tptr -> p3.x + 50 * normal[ 0 ],  tptr -> p3.y + 50 * normal[ 1 ], tptr -> p3.z + 50 * normal[ 2 ] };
-            double projected_point[ 3 ]; 
+            double normal[ 3 ]; 
+            double *tri_normal = &( tptr -> N ); 
+            double normal_point[ 3 ] = { tptr -> p1.x + 50*tptr -> N[ 0 ],  tptr -> p1.y + 50*tptr -> N[ 1 ],  tptr -> p1.z + 50*tptr -> N[ 2 ] };
+            double transpose_point[ 3 ];
 
-            mxpunto( ( double * ) &projected_point, ( double * ) &ProjectedModelView, ( double * ) &point );
-            
+            mxpunto( &transpose_point, &Modelview , &normal_point );
+
             // Normals working
             glBegin(GL_LINES);
-                glVertex3d(p3.x, p3.y, p3.z);
-                glVertex3d(projected_point[0], projected_point[1], projected_point[2]);
+                glVertex3d(p1.x, p1.y, p1.z);
+                glVertex3d( transpose_point[ 0 ], transpose_point[ 1 ], transpose_point[ 2 ] );
             glEnd();
 
         }
@@ -577,11 +580,19 @@ static void marraztu( void )
     transform_into_identity_matrix( ( double * ) &M_Helper );
 
     // Set Mprojection  
+    transform_into_identity_matrix( ( double * )  &MProjection );
 
     if ( perspective_mode ) { 
-        set_perspective_matrix( ( double * ) &MProjection ); 
+
+        double t = 5.13264357; 
+        double b = -5.13264357; 
+        double l = 5.13264357; 
+        double r = -5.13264357; 
+        double n = 5.0; 
+        double f = 2000.0; 
+        // set_perspective_matrix( ( double * ) &MProjection ); 
+        glFrustum( l, r, b, t, n, f);
     } else { 
-        transform_into_identity_matrix( ( double * )  &MProjection );
         glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
     } 
 
@@ -643,27 +654,13 @@ static void marraztu( void )
             
             for (i = 0; i < sel_ptr->num_triangles; i++)
             {
-
-                if ( is_visible( sel_ptr,  auxptr, i ) ) {
-                    dibujar_triangulo(sel_ptr, i);
-                }
-            }
-
-            for (i = 0; i < cam_ptr -> num_triangles; i++)
-            {
-
-                if ( is_visible( cam_ptr,  auxptr, i ) ) {
-                
-                    dibujar_triangulo(sel_ptr, i);
-
-                }
+                dibujar_triangulo(sel_ptr, i);
             }
 
         }
     } else {
 
         dibujar_triangulo(sel_ptr, indexx);
-        dibujar_triangulo(cam_ptr, indexx);
 
     }
 
@@ -754,7 +751,7 @@ void x_aldaketa(int dir)
     if( !ald_lokala && transform_camera ){
 
         double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
+        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
 
     } else { 
 
@@ -779,7 +776,7 @@ void y_aldaketa(int dir)
     if( !ald_lokala && transform_camera ){
 
         double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
+        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
 
     } else { 
 
@@ -1206,27 +1203,29 @@ int main(int argc, char **argv)
 
     if (argc > 1) 
     { 
-        // Cameras 
-        read_from_file( "camara.txt", &fcamprt, 1 );
+
+                // Cameras 
         read_from_file( "camara.txt", &fcamprt, 1 );
 
-        fcamprt -> mptr -> m[ TZ ] = 250; 
+        fcamprt -> mptr -> m[ TZ ] = -250; 
 
-        // Object
-        read_from_file( "z.txt",      &foptr,   0  );
-        read_from_file( "k.txt",      &foptr,   0  );
-        
-        foptr -> mptr -> m[ TX ] = 250; 
+        for (int i = 1; i < argc; i++) {
+            read_from_file( argv[i], &foptr, 0  );
+        }
+
 
     } else {
 
         // Cameras 
         read_from_file( "camara.txt", &fcamprt, 1 );
 
-        // Objects 
-        read_from_file( "z.txt",      &foptr, 0  );
-        read_from_file( "k.txt",      &foptr, 0  );
+        fcamprt -> mptr -> m[ TZ ] = -250; 
 
+        // Object
+        read_from_file( "z.txt",      &foptr,   0  );
+        read_from_file( "k.txt",      &foptr,   0  );
+        
+        foptr -> mptr -> m[ TX ] = 250; 
     }
 
     glutMainLoop();
