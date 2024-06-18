@@ -750,8 +750,11 @@ void x_aldaketa(int dir)
 
     if( !ald_lokala && transform_camera ){
 
-        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
+        if( aldaketa == ROTATE ) {
+            double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, Y_AXIS );
+        }
+
 
     } else { 
 
@@ -775,8 +778,10 @@ void y_aldaketa(int dir)
 
     if( !ald_lokala && transform_camera ){
 
-        double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
-        rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
+        if( aldaketa == ROTATE ){
+            double at[ 3 ] = { sel_ptr -> mptr -> m[ 3 ], sel_ptr -> mptr -> m[ 7 ], sel_ptr -> mptr -> m[ 11 ] };
+            rotate_analisis( ( double * ) &herlper_matrix, ( double * ) &at, dir, X_AXIS );
+        }
 
     } else { 
 
